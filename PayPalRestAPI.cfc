@@ -97,7 +97,7 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 					,"soft_descriptor": variables.descriptor
 					,"amount": [
 						"currency_code": "USD"
-						,"value": "#trim(numberformat(arguments.amount, "99999999.99"))#"
+						,"value": "#trim(numberformat(arguments.amount, "99999999.00"))#"
 					]
 				]
 			],
