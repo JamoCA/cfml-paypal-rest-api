@@ -1,5 +1,5 @@
 component name="PayPalRestAPI" hint="PayPal Rest API" {
-	// 2024-10-14 v1 Supports auth and only very basic createOrder & orderCapture functions.
+	// 2024-10-14 v1 Supports auth and only very basic createOrder & captureOrder functions.
 
 	variables.clientId = "";
 	variables.clientSecret = "";
@@ -71,49 +71,18 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 	public struct function createOrder(
 			string requestId = createuuid()
 			,numeric amount = 0
-			,string name = ""
-			,string cardnumber = ""
-			,string expdate = "" // yyyy-mm
-			,string cvv2 = ""
-			,string address = ""
-			,string city = ""
-			,string state = ""
-			,string zip = ""
-			,string country = "US"
 			,string token = getAccessToken(forceRefresh=false)
-		) hint="Creates an order." {
-
-		arguments.cardnumber = 	javacast("string", arguments.cardnumber).replaceAll("\D", "");
-		arguments.expdate = (isdate(arguments.expdate)) ? dateformat(arguments.expdate,'yyyy-mm') : trim(arguments.expdate);
+		) hint="Creates an order. Requires amount." {
 
 		local.body = [
 			"intent": "CAPTURE",
 			"purchase_units": [
 				[
 					"reference_id": "default"
-					// ,"description": ""
-					// ,"custom_id": ""
-					// ,"invoice_id": ""
 					,"soft_descriptor": variables.descriptor
 					,"amount": [
 						"currency_code": "USD"
 						,"value": "#trim(numberformat(arguments.amount, "99999999.00"))#"
-					]
-				]
-			],
-			"payment_source": [
-				"card": [
-					"name": trim(arguments.name)
-					,"number": arguments.cardnumber
-					,"security_code": trim(javacast("string", arguments.cvv2))
-					,"expiry": arguments.expdate
-					,"billing_address": [
-						"address_line_1": trim(arguments.address)
-						// ,"address_line_2": ""
-						,"admin_area_2": trim(arguments.city)
-						,"admin_area_1": trim(arguments.state)
-						,"postal_code": trim(javacast("string", arguments.zip))
-						,"country_code": trim(arguments.country)
 					]
 				]
 			]
@@ -132,14 +101,45 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 	public struct function captureOrder(
 			required string id
 			,required string requestId
+			,required string name = ""
+			,required string cardnumber = ""
+			,required string expdate = "" // yyyy-mm
+			,required string cvv2 = ""
+			,string address = ""
+			,string city = ""
+			,string state = ""
+			,string zip = ""
+			,string country = "US"
 			,string token = getAccessToken(forceRefresh=false)
-		) hint="Captures payment for an order. Require" {
+		) hint="Captures payment for an order. Requires payment data." {
+
+		arguments.cardnumber = 	javacast("string", arguments.cardnumber).replaceAll("\D", "");
+		arguments.expdate = (isdate(arguments.expdate)) ? dateformat(arguments.expdate,'yyyy-mm') : trim(arguments.expdate);
+
+		local.body = [
+			"payment_source": [
+				"card": [
+					"name": trim(arguments.name)
+					,"number": arguments.cardnumber
+					,"security_code": trim(javacast("string", arguments.cvv2))
+					,"expiry": arguments.expdate
+					,"billing_address": [
+						"address_line_1": trim(arguments.address)
+						,"admin_area_2": trim(arguments.city)
+						,"admin_area_1": trim(arguments.state)
+						,"postal_code": trim(javacast("string", arguments.zip))
+						,"country_code": trim(arguments.country)
+					]
+				]
+			]
+		];
+
 		local.headers = [
 			["name": "PayPal-Request-Id", "value": arguments.requestId],
 			["name": "Authorization", "value": "Bearer #arguments.token#"]
 		];
 
-		local.data = doHttp(action="orders/#trim(arguments.id)#/capture", headers=local.headers);
+		local.data = doHttp(action="orders/#trim(arguments.id)#/capture", headers=local.headers, body=local.body);
 
 		return local.data;
 	}
@@ -156,8 +156,6 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 				cfhttpparam(type="body", value=serializejson(arguments.body));
 			}
 		}
-		writedump(var=arguments);
-		writedump(var=local.result);
 		local.data = (isjson(local.result.filecontent)) ? deserializejson(local.result.filecontent) : {"debug":duplicate(local.result)};
 		local.data["id"] = local.data.keyexists("id") ? local.data.id : "";
 		addResponseData(local.data);
@@ -166,14 +164,16 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 	}
 
 	private void function addResponseData(struct orderData) hint="Parse processor_response and inject keys" {
-		arguments.orderData["responseCode"] = "9600";
-		arguments.orderData["responseCodeText"] = "UNRECOGNIZED_RESPONSE_CODE";
-		arguments.orderData["responseCodeMessage"] = "Unrecognized response code.";
+		arguments.orderData["responseCode"] = ""; // 9600
+		arguments.orderData["responseCodeText"] = ""; // UNRECOGNIZED_RESPONSE_CODE
+		arguments.orderData["responseCodeMessage"] = ""; // Unrecognized response code.
 		arguments.orderData["avsMessage"] = "";
 		arguments.orderData["cvvMessage"] = "";
 		arguments.orderData["transactionId"] = "";
 		arguments.orderData["paypalId"] = "";
-		arguments.orderData["status"] = "";
+		if (!structkeyexists(arguments.orderData, "status")){
+			arguments.orderData["status"] = "";
+		}
 		arguments.orderData["network"] = "";
 
 		local.data = {};
@@ -546,4 +546,3 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 	}
 
 }
-
