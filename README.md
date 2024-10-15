@@ -58,7 +58,7 @@ if (order.responseCode neq "0000"){
 ## 4. Capture the Order (if the order creation was successful)
 
 ```cfc
-capturedOrder = payPalApi.orderCapture(
+capturedOrder = payPalApi.captureOrder(
 	requestId = requestId,
 	id = order.id
 );
