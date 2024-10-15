@@ -78,7 +78,7 @@ writedump(var=orderDataToCapture, label="orderDataToCapture");
 
 capturedOrder = payPalApi.captureOrder(argumentcollection=orderDataToCapture);
 
-isCaptured = len(capturedOrder.transactionId);
+isCaptured = len(capturedOrder.transactionId) && capturedOrder.status eq "completed";
 
 if (isCaptured){
 	writeoutput("<p><b>Success:</b> TransactionID: #capturedOrder.transactionId#</p>");
