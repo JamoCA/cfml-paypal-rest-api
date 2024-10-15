@@ -168,7 +168,7 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 	private void function addResponseData(struct orderData) hint="Parse processor_response and inject keys" {
 		arguments.orderData["responseCode"] = "9600";
 		arguments.orderData["responseCodeText"] = "UNRECOGNIZED_RESPONSE_CODE";
-		arguments.orderData["responseCodeMessage"] = "Unrecognoized response code.";
+		arguments.orderData["responseCodeMessage"] = "Unrecognized response code.";
 		arguments.orderData["avsMessage"] = "";
 		arguments.orderData["cvvMessage"] = "";
 		arguments.orderData["transactionId"] = "";
