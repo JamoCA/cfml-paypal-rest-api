@@ -129,7 +129,7 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 		return local.data;
 	}
 
-	public struct function orderCapture(
+	public struct function captureOrder(
 			required string id
 			,required string requestId
 			,string token = getAccessToken(forceRefresh=false)
