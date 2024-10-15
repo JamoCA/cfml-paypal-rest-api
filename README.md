@@ -35,20 +35,13 @@ requestId = createuuid();
 
 ```cfc
 order = payPalApi.createOrder(
-requestId = requestId
-	amount = 14.99,
-	name = "Joe Cardholder",
-	cardnumber = "4556747948786484",
-	expdate = dateadd("m", 2, now()), // format "yyyy-mm" or pass a date object
-	cvv2 = "789",
-	address = "123 ABC Street", // optional
-	city = "Anytown", // optional (admin_area_2)
-	state = "CA", // optional  (admin_area_1)
-	zip = "90210", // optional (postal_code)
-	country = "US" // optional
+	requestId = requestId
+	amount = 14.99
 );
 
-if (order.responseCode neq "0000"){
+isCreated = len(order.id) && order.status eq "created";
+
+if (!isCreated){
 	writeoutput("<p style=""color:red;""><b>Order Error:</b> #order.errorMessage#</p>");
 	// Redisplay form to allow corrections
 	exit;
@@ -60,14 +53,26 @@ if (order.responseCode neq "0000"){
 ```cfc
 capturedOrder = payPalApi.captureOrder(
 	requestId = requestId,
-	id = order.id
+	id = order.id,
+	name = "Joe Cardholder",
+	cardnumber = "4556747948786484",
+	expdate = dateadd("m", 2, now()), // format "yyyy-mm" or pass a date object
+	cvv2 = "789",
+	address = "123 ABC Street", // optional
+	city = "Anytown", // optional (admin_area_2)
+	state = "CA", // optional  (admin_area_1)
+	zip = "90210", // optional (postal_code)
+	country = "US" // optional
 );
-if (capturedOrder.responseCode neq "0000"){
+
+isCaptured = len(capturedOrder.transactionId);
+
+if (!isCaptured){
 	writeoutput("<p style=""color:red;""><b>Capture Error:</b> #capturedOrder.errorMessage#</p>");
 	// Redisplay form to allow corrections
 	exit;
 }
 // Save the order data.
-writeoutput("<p>Paypal Transaction ID #capturedOrder.id#.</p>");
+writeoutput("<p>Paypal Transaction ID #capturedOrder.transactionId#.</p>");
 ```
 
