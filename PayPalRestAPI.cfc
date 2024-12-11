@@ -206,6 +206,9 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 		if (isdefined("local.data.status")){
 			arguments.orderData["status"] = local.data.status;
 		}
+		if (arguments.orderData.responseCodeText eq "APPROVED" && !len(arguments.orderData.transactionId) && local.data.keyexists("id")){
+			arguments.orderData["transactionId"] = local.data.id;
+		}
 	}
 
 	private void function addErrorMessageData(struct orderData) {
