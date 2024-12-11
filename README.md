@@ -65,7 +65,7 @@ capturedOrder = payPalApi.captureOrder(
 	country = "US" // optional
 );
 
-isCaptured = len(capturedOrder.transactionId) && capturedOrder.status eq "completed";
+isCaptured = capturedOrder.responseCodeText eq "Approved" && capturedOrder.status eq "completed";
 
 if (!isCaptured){
 	writeoutput("<p style=""color:red;""><b>Capture Error:</b> #capturedOrder.errorMessage#</p>");
