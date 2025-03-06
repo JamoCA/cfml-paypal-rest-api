@@ -1,5 +1,6 @@
 component name="PayPalRestAPI" hint="PayPal Rest API" {
 	// 2024-10-14 v1 Supports auth and only very basic createOrder & captureOrder functions.
+	// 2025-03-06 V1.1 Extended to support additional createOrder arguments.
 
 	variables.clientId = "";
 	variables.clientSecret = "";
@@ -68,25 +69,49 @@ component name="PayPalRestAPI" hint="PayPal Rest API" {
 		return (isjson(local.result.filecontent)) ? deserializejson(local.result.filecontent) : {"debug":duplicate(local.result)};
 	}
 
+	// https://developer.paypal.com/docs/api/orders/v2/#orders_create
 	public struct function createOrder(
 			string requestId = createuuid()
 			,numeric amount = 0
 			,string token = getAccessToken(forceRefresh=false)
+			,string intent = "CAPTURE"
+			,array items = []
+			,struct purchase_units = {} // if used, overrides amount, intent & items. (All values must be configured in the object.)
+			,struct payer = {}
+			,struct payment_source = {}
+			,struct application_context = {}
 		) hint="Creates an order. Requires amount." {
 
 		local.body = [
-			"intent": "CAPTURE",
+			"intent": ucase(arguments.intent),
 			"purchase_units": [
 				[
 					"reference_id": "default"
 					,"soft_descriptor": variables.descriptor
 					,"amount": [
 						"currency_code": "USD"
-						,"value": "#trim(numberformat(arguments.amount, "99999999.00"))#"
+						,"value": "#trim(numberformat(arguments.amount, "9.00"))#"
 					]
 				]
 			]
 		];
+		// include optional items (if passed)
+		if (arraylen(arguments.items)){
+			local.body.purchase_units["items"] = arguments.items;
+		}
+		// if used, replace the default "purchase_unit" object created above.
+		if (structcount(arguments.purchase_units)){
+			local.body["purchase_units"] = arguments.purchase_units;
+		}
+		if (structcount(arguments.payer)){
+			local.body["payer"] = arguments.payer;
+		}
+		if (structcount(arguments.payment_source)){
+			local.body["payment_source"] = arguments.payment_source;
+		}
+		if (structcount(arguments.application_context)){
+			local.body["application_context"] = arguments.application_context;
+		}
 
 		local.headers = [
 			["name": "PayPal-Request-Id", "value": arguments.requestId],
